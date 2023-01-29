@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { GetUserDto } from './dto/get-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -9,51 +11,39 @@ import { UserMapper } from './mapper/user.mapper';
 export class UserService {
   private readonly users: User[] = [];
 
-  constructor(private userMapper: UserMapper) {
-    this.generateDumpUsers();
+  constructor(
+    private userMapper: UserMapper,
+    @InjectRepository(User) private userRepository: Repository<User>,
+  ) {}
+
+  async getUsers(): Promise<GetUserDto[]> {
+    const users = await this.userRepository.find();
+    return users.map((user: User) => this.userMapper.mapToGetUserDto(user));
   }
 
-  private generateDumpUsers(): void {
-    for (let i = 0; i < 3; i++) {
-      this.users.push({
-        id: i + 1,
-        username: `user${i + 1}`,
-        password: `pass${i + 1}`,
-      });
-    }
-  }
-
-  getUsers(): GetUserDto[] {
-    if (this.users.length == 0) return [];
-    return this.users.map((user: User) =>
-      this.userMapper.mapToGetUserDto(user),
-    );
-  }
-
-  getUserById(id: number): GetUserDto | undefined {
-    const user = this.users.find((user: User) => user.id == id);
-    if (!user) return undefined;
+  async getUserById(id: number): Promise<GetUserDto | null> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) return null;
     return this.userMapper.mapToGetUserDto(user);
   }
 
-  createUser(userDto: CreateUserDto): boolean {
-    const user: User = { ...userDto, id: this.users.length + 1 };
-    this.users.push(user);
+  async createUser(userDto: CreateUserDto): Promise<boolean> {
+    const user: User = this.userMapper.mapFromCreateUserDto(userDto);
+    const createdUser = await this.userRepository.save(user);
+    if (!createdUser) return false;
     return true;
   }
 
-  updateUser(id: number, userDto: UpdateUserDto): boolean {
-    const user = this.users.find((user: User) => user.id == id);
-    if (!user) return false;
-    user.username = userDto.username;
-    user.password = userDto.password;
+  async updateUser(id: number, userDto: UpdateUserDto): Promise<boolean> {
+    const user: User = this.userMapper.mapFromUpdateUserDto(userDto);
+    const updatedUser = await this.userRepository.update(id, user);
+    if (!updatedUser) return false;
     return true;
   }
 
-  deleteUser(id: number): boolean {
-    const userIndex = this.users.findIndex((user: User) => user.id == id);
-    if (userIndex === -1) false;
-    this.users.splice(userIndex, 1);
+  async deleteUser(id: number): Promise<boolean> {
+    const deletedUser = await this.userRepository.delete(id);
+    if (!deletedUser) return false;
     return true;
   }
 }

@@ -12,34 +12,34 @@ export class UserController {
   constructor(private userService: UserService) {}
 
   @Get()
-  getUsers(): GetUserDto[] {
-    return this.userService.getUsers();
+  async getUsers(): Promise<GetUserDto[]> {
+    return await this.userService.getUsers();
   }
 
   @Get('/:id')
-  getUserById(
+  async getUserById(
     @Param('id', ParseIntPipe) id: number,
-  ): GetUserDto | NotFoundException {
-    const user = this.userService.getUserById(id);
+  ): Promise<GetUserDto | NotFoundException> {
+    const user = await this.userService.getUserById(id);
     if (!user) return new NotFoundException();
     return user;
   }
 
   @Post()
-  createUser(@Body() createDto: CreateUserDto): boolean {
+  async createUser(@Body() createDto: CreateUserDto): Promise<boolean> {
     return this.userService.createUser(createDto);
   }
 
   @Patch('/:id')
-  updateUser(
+  async updateUser(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateUserDto,
-  ): boolean {
+  ): Promise<boolean> {
     return this.userService.updateUser(id, updateDto);
   }
 
   @Delete('/:id')
-  deleteUser(@Param('id', ParseIntPipe) id: number): boolean {
+  async deleteUser(@Param('id', ParseIntPipe) id: number): Promise<boolean> {
     return this.userService.deleteUser(id);
   }
 }
