@@ -1,4 +1,12 @@
-import { Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { Body } from '@nestjs/common/decorators';
 import { NotFoundException } from '@nestjs/common/exceptions/not-found.exception';
 import { ParseIntPipe } from '@nestjs/common/pipes';
@@ -19,27 +27,33 @@ export class UserController {
   @Get('/:id')
   async getUserById(
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<GetUserDto | NotFoundException> {
+  ): Promise<GetUserDto> {
     const user = await this.userService.getUserById(id);
-    if (!user) return new NotFoundException();
+    if (!user) throw new NotFoundException();
     return user;
   }
 
   @Post()
-  async createUser(@Body() createDto: CreateUserDto): Promise<boolean> {
-    return this.userService.createUser(createDto);
+  async createUser(@Body() createDto: CreateUserDto) {
+    const isCreated: boolean = await this.userService.createUser(createDto);
+    if (!isCreated) throw new BadRequestException();
+    return { message: 'User created successfully' };
   }
 
   @Patch('/:id')
   async updateUser(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateUserDto,
-  ): Promise<boolean> {
-    return this.userService.updateUser(id, updateDto);
+  ) {
+    const isUpdated = await this.userService.updateUser(id, updateDto);
+    if (!isUpdated) throw new NotFoundException();
+    return { message: 'User updated successfully' };
   }
 
   @Delete('/:id')
-  async deleteUser(@Param('id', ParseIntPipe) id: number): Promise<boolean> {
-    return this.userService.deleteUser(id);
+  async deleteUser(@Param('id', ParseIntPipe) id: number) {
+    const isDeleted = await this.userService.deleteUser(id);
+    if (!isDeleted) throw new NotFoundException();
+    return { message: 'User deleted successfully' };
   }
 }
