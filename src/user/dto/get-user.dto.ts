@@ -1,4 +1,6 @@
 export class GetUserDto {
+  id: number;
   username: string;
-  password: string;
+  name: string;
+  email: string;
 }
